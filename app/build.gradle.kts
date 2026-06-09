@@ -1,46 +1,24 @@
-@file:Suppress("UnstableApiUsage")
-
 plugins {
-    id("com.android.application")
-    kotlin("android")
+    id 'com.android.application'
 }
 
 android {
-    namespace = "com.example.myfirstapp"
-    compileSdk = 33
+    namespace 'com.techpremium.miniproxy'
+    compileSdk 35
+
     defaultConfig {
-        applicationId = "com.example.myfirstapp"
-        minSdk = 23
-        targetSdk = 33
-        versionCode = 1
-        versionName = "1.0-${System.getenv("VERSION_SHA")}"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        applicationId "com.techpremium.miniproxy"
+        minSdk 26 // Android 8.0 (Ensures basic background channels exist)
+        targetSdk 35 // Targets Android 15 capability policies
+        versionCode 1
+        versionName "1.0"
     }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
+            minifyEnabled true // Strip out unused Android framework code
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-}
-
-kotlin {
-    jvmToolchain(17)
-}
-
-dependencies {
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.3")
-    androidTestImplementation("androidx.test:runner:1.5.2")
-    androidTestImplementation("androidx.test.ext:junit-ktx:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
