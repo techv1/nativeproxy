@@ -1,86 +1,178 @@
-# Introduction
+NativeProxy
 
-This is a template for doing Android development using GitLab and [fastlane](https://fastlane.tools/).
-It is based on the tutorial for Android apps in general that can be found [here](https://developer.android.com/training/basics/firstapp/). 
-If you're learning Android at the same time, you can also follow along that
-tutorial and learn how to do everything all at once.
+A lightweight HTTP forward proxy + HTTPS CONNECT tunnel running as an
+Android foreground service. Pure Kotlin, zero third-party networking
+dependencies, and a Material 3 dark-themed control surface.
 
-# Reference links
+text
 
-- [GitLab CI Documentation](https://docs.gitlab.com/ee/ci/)
-- [Blog post: Android publishing with GitLab and fastlane](https://about.gitlab.com/2019/01/28/android-publishing-with-gitlab-and-fastlane/)
+┌─────────────┐    ┌─────────────────┐    ┌──────────────┐
+│  Phone app  │───▶│  NativeProxy    │───▶│  Upstream    │
+│  (browser,  │◀───│  foreground Svc │◀───│  HTTP/HTTPS  │
+│   curl)     │    │  ServerSocket   │    │              │
+└─────────────┘    └─────────────────┘    └──────────────┘
 
-You'll definitely want to read through the blog post since that walks you in detail
-through a working production configuration using this model.
 
-# Getting started
+The service:
 
-First thing is to follow the [Android tutorial](https://developer.android.com/training/basics/firstapp/) and
-get Android Studio installed on your machine, so you can do development using
-the Android IDE. Other IDE options are possible, but not directly described or
-supported here. If you're using your own IDE, it should be fairly straightforward
-to convert these instructions to use with your preferred toolchain.
 
-## What's contained in this project
+    Accepts a configurable bind address (default 0.0.0.0) and port (default
+    8080).
 
-### Android code
+    Forwards plain HTTP requests, rewriting the absolute URL to a relative
+    path before passing the bytes upstream.
 
-The state of this project is as if you followed the first few steps in the linked
-[Android tutorial](https://developer.android.com/training/basics/firstapp/) and
-have created your project. You're definitely going to want to open up the
-project and change the settings to match what you plan to build. In particular,
-you're at least going to want to change the following:
+    Handles CONNECT host:port for HTTPS by replying 200 Connection Established and then blind-piping bytes in both directions.
 
-- Application Name: "My First App"
-- Company Domain: "example.com"
+    Exposes a foreground notification with a "Stop" action and live status
+    updates via LocalBroadcastManager-style explicit-package broadcasts.
 
-### Fastlane files
+    Persists last-used bind IP / port in SharedPreferences and validates
+    input on the main thread.
 
-It also has fastlane setup per our [blog post](https://about.gitlab.com/2019/01/28/android-publishing-with-gitlab-and-fastlane/) on
-getting GitLab CI set up with fastlane. Note that you may want to update your
-fastlane bundle to the latest version; if a newer version is available, the pipeline
-job output will tell you.
 
-### Dockerfile build environment
+The app shell is a single activity with a status card, a configuration
+card, a primary start/stop button, and an "About" panel.
 
-In the root there is a Dockerfile which defines a build environment which will be
-used to ensure consistent and reliable builds of your Android application using
-the correct Android SDK and other details you expect. Feel free to add any
-build-time tools or whatever else you need here.
 
-We generate this environment as needed because installing the Android SDK
-for every pipeline run would be very slow.
+Project layout
 
-### Gradle configuration
+This project follows the standard Android Studio layout and is wired up
+to the GitLab CI / Fastlane template from
+techv1/nativeproxy.
 
-The gradle configuration is exactly as output by Android Studio except for the
-version name being updated to 
+text
 
-Instead of:
+.
+├── .gitlab-ci.yml          # CI pipeline (build → test → internal → beta → prod)
+├── Dockerfile               # Android SDK + Fastlane image used by CI
+├── Gemfile / Gemfile.lock   # Ruby deps for Fastlane
+├── LICENSE
+├── README.md
+├── CONTRIBUTING.md
+├── build.gradle.kts         # Root Gradle build (Kotlin DSL)
+├── settings.gradle.kts
+├── gradle.properties
+├── gradle/
+│   ├── libs.versions.toml   # Version catalog
+│   └── wrapper/             # Gradle wrapper jar + properties
+├── gradlew, gradlew.bat
+├── fastlane/
+│   ├── Appfile              # package_name, json_key_file
+│   └── Fastfile             # buildDebug, buildRelease, test, internal, promote_*
+└── app/
+    ├── .gitignore
+    ├── app.iml
+    ├── build.gradle         # App-module build (Groovy DSL)
+    ├── proguard-rules.pro
+    └── src/main/
+        ├── AndroidManifest.xml
+        ├── java/com/techpremium/miniproxy/
+        │   ├── MainActivity.kt
+        │   └── ProxyService.kt
+        └── res/
+            ├── drawable/    # ic_launcher_*, bg_card, bg_status_dot
+            ├── layout/      # activity_main.xml
+            ├── mipmap-anydpi-v26/   # adaptive icon descriptors
+            ├── values/      # strings, colors, dimens, themes
+            └── xml/         # network_security_config.xml
 
-`versionName "1.0"`
 
-It is now set to:
+The two Java files in the original base.zip (proxyservice.java and
+mainactivity.java in package com.example.miniproxy, plus their
+companion mainactivity.xml) are preserved verbatim under
+app/legacy-src/ and app/legacy-res/ so you can diff the two
+implementations without breaking the active build.
 
-`versionName "1.0-${System.env.VERSION_SHA}"`
 
-You'll want to update this for whatever versioning scheme you prefer.
+Building locally
 
-### Build configuration (`.gitlab-ci.yml`)
+You need JDK 17 and the Android SDK 35 installed (set
+ANDROID_HOME).
 
-The sample project also contains a basic `.gitlab-ci.yml` which will successfully 
-build the Android application.
+bash
 
-Note that for publishing to the test channels or production, you'll need to set
-up your secret API key. The stub code is here for that, but please see our
-[blog post](https://about.gitlab.com/2019/01/28/android-publishing-with-gitlab-and-fastlane/) for
-details on how to set this up completely. In the meantime, publishing steps will fail.
+./gradlew assembleDebug         # → app/build/outputs/apk/debug/app-debug.apk
+./gradlew assembleRelease       # → app/build/outputs/apk/release/app-release.apk
+./gradlew test                   # unit tests
 
-The build script also handles automatic versioning by relying on the CI pipeline
-ID to generate a unique, ever increasing number. If you have a different versioning
-scheme you may want to change this.
 
-```yaml
-    - "export VERSION_CODE=$(($CI_PIPELINE_IID)) && echo $VERSION_CODE"
-    - "export VERSION_SHA=`echo ${CI_COMMIT_SHA:0:8}` && echo $VERSION_SHA"
+The wrapper pins Gradle 8.6 and the Android Gradle Plugin 8.4.2; both are
+resolved on the first run.
+
+Running on a device
+
+    1.
+    adb install -r app/build/outputs/apk/debug/app-debug.apk
+    2.
+    Open NativeProxy from the launcher.
+    3.
+    Grant the POST_NOTIFICATIONS prompt (Android 13+).
+    4.
+    Pick a bind IP and port, hit Start Proxy.
+    5.
+    Point your client at http://<device-ip>:<port> (or use
+    adb reverse tcp:8080 tcp:8080 and point the client at
+    http://127.0.0.1:8080).
+
+
+Auto-versioning in CI
+
+app/build.gradle reads the VERSION_SHA env var (defaulting to "1.0"
+locally) and emits versionName "1.0-${VERSION_SHA}". The pipeline
+populates it from ${CI_COMMIT_SHA:0:8}, and versionCode is
+$CI_PIPELINE_IID — both come from the GitLab template.
+
+
+CI / CD overview
+
+Stage	Trigger	Job	Notes
+environment	Dockerfile Δ	updateContainer	Rebuilds the SDK + Fastlane image
+build	every commit	buildDebug	Runs fastlane buildDebug
+build	every commit	buildRelease	Runs fastlane buildRelease
+test	after build	testDebug	Runs fastlane test
+internal	manual	publishInternal	fastlane internal → Play internal track
+alpha	manual	promoteAlpha	fastlane promote_internal_to_alpha
+beta	manual	promoteBeta	fastlane promote_alpha_to_beta
+production	manual (master)	promoteProduction	fastlane promote_beta_to_production
+
+You must upload a Play Store service-account JSON as a GitLab CI variable
+(google_play_api_key.json) before the promote lanes can succeed. The
+.promote_job template deliberately fails fast if the file is missing so
+that the missing secret is obvious in the job log.
+
+
+What was filled in
+
+Coming from the placeholder template, these files were stubbed or missing
+and have now been completed:
+
+
+    Dockerfile — installs Android command-line tools, SDK platform 35,
+    build-tools 35.0.0, and Fastlane via Bundler.
+
+    .gitlab-ci.yml — environment / build / test / promote stages wired to
+    the Fastfile.
+
+    Gemfile + Gemfile.lock — pins Fastlane and its transitive gems.
+
+    fastlane/Fastfile + fastlane/Appfile — lanes for build, test, and
+    Play Store track promotion; package name matches the Android app.
+
+    app/build.gradle (Groovy) + app/proguard-rules.pro — module build
+    with the same com.techpremium.miniproxy namespace used by the
+    Kotlin sources.
+
+    gradle/wrapper/gradle-wrapper.jar + gradlew + gradlew.bat — the
+    actual Gradle wrapper that matches gradle-wrapper.properties.
+
+    Adaptive launcher icons (mipmap-anydpi-v26/ic_launcher{,_round}.xml).
+
+    .gitignore (root + app/) and a stub android-template.iml /
+    app/app.iml for IDE integration.
+
+
+The application sources themselves — MainActivity.kt, ProxyService.kt,
+AndroidManifest.xml, the layout, and the values/ resources — are
+unchanged from base.zip.
 ```
