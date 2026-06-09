@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    NativeProxy needs to handle raw HTTP (cleartext) traffic because it acts
+    as a forward proxy — traffic passes through, not originates from this app.
+    This config permits cleartext for all domains so the proxy server socket
+    can pipe HTTP bytes without triggering Android's network security policy.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
