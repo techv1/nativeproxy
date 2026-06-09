@@ -1,0 +1,11 @@
+# Template for local.properties — copy this file to `local.properties` and
+# point `sdk.dir` at your Android SDK installation. `local.properties` is
+# git-ignored, so this template is committed instead.
+#
+#   Mac / Linux:  sdk.dir=/Users/you/Library/Android/sdk
+#   Windows:      sdk.dir=C\:\\Users\\you\\AppData\\Local\\Android\\Sdk
+#
+# The `fastlane` plugin also reads this file to locate the SDK, which is
+# why the path is shared.
+
+sdk.dir=/PATH/TO/YOUR/Android/Sdk
