@@ -1,11 +1,7 @@
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Dockerfile — NativeProxy CI build environment
 #
-# This image is built by the GitLab `environment` stage and cached in the
-# project's container registry. Every subsequent build / test / promote job
-# pulls this image, which gives us a reproducible Android SDK + Fastlane
-# toolchain without re-installing the SDK on every pipeline run.
+# This image provides a reproducible Android SDK environment for GitLab CI.
 # ─────────────────────────────────────────────────────────────────────────────
 
 FROM eclipse-temurin:17
@@ -23,11 +19,8 @@ RUN apt-get --quiet update --yes && \
         wget apt-utils tar unzip \
         lib32stdc++6 lib32z1 \
         build-essential \
-        ruby ruby-dev \
         vim-common && \
     rm -rf /var/lib/apt/lists/*
-
-# vim-common provides `xxd` (hex -> binary) used by some Fastlane actions.
 
 # ── Android command-line tools ──────────────────────────────────────────────
 RUN wget --quiet --output-document=android-sdk.zip \
@@ -40,21 +33,12 @@ RUN wget --quiet --output-document=android-sdk.zip \
 # Accept SDK licenses non-interactively.
 RUN yes | sdkmanager --licenses > /dev/null
 
-# Install the SDK platform, build-tools, platform-tools, and Google m2
-# repositories that the Fastlane supply action needs.
+# Install the SDK platform, build-tools, and platform-tools.
 RUN sdkmanager "platforms;android-${ANDROID_COMPILE_SDK}" && \
     sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}" && \
     sdkmanager "platform-tools" && \
     sdkmanager "extras;android;m2repository" && \
-    sdkmanager "extras;google;m2repository" && \
-    sdkmanager "extras;google;google_play_services"
+    sdkmanager "extras;google;m2repository"
 
-# ── Ruby + Fastlane (via Bundler) ──────────────────────────────────────────
-COPY Gemfile.lock Gemfile ./
-RUN gem install --no-document bundler && \
-    bundle config set --local without 'development' && \
-    bundle install --jobs 4 --retry 3 && \
-    bundle update fastlane
-
-# Default working directory — GitLab CI mounts the repo at /builds/...
-WORKDIR /builds/techv1/nativeproxy
+# Default working directory — GitLab CI mounts the repo here.
+WORKDIR /builds
