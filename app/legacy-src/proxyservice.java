@@ -1,4 +1,4 @@
-package com.techpremium.miniproxy;
+package com.example.miniproxy;
 
 import android.app.Notification;
 import android.app.NotificationChannel;

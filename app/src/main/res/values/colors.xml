@@ -1,6 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+    <!-- Sleek dark-first palette -->
+    <color name="color_primary">#6C63FF</color>
+    <color name="color_on_primary">#FFFFFF</color>
+    <color name="color_primary_container">#2D2A5E</color>
+    <color name="color_on_primary_container">#C8C4FF</color>
+    <color name="color_secondary">#03DAC6</color>
+    <color name="color_secondary_container">#003B36</color>
+    <color name="color_surface">#1A1A2E</color>
+    <color name="color_surface_variant">#252540</color>
+    <color name="color_on_surface">#E8E8F0</color>
+    <color name="color_background">#12121F</color>
+    <color name="color_error">#FF5370</color>
+    <color name="color_on_error">#FFFFFF</color>
+    <color name="color_divider">#2E2E4A</color>
+    <color name="color_status_running">#03DAC6</color>
+    <color name="color_status_idle">#6B6B8A</color>
+    <color name="color_card_background">#1E1E35</color>
 </resources>
